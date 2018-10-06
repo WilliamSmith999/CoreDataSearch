@@ -8,7 +8,8 @@
 
 import UIKit
 
-class DocumentListViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
+class DocumentListViewController: UIViewController, UITableViewDelegate, UITableViewDataSource, UISearchResultsUpdating {
+
     
     @IBOutlet weak var documentsTableView: UITableView!
     
@@ -22,7 +23,31 @@ class DocumentListViewController: UIViewController, UITableViewDelegate, UITable
 
         dateFormatter.dateStyle = .medium
         dateFormatter.timeStyle = .medium
+        
+        documentsTableView.delegate = self
+        documentsTableView.dataSource = self
+        
+        configureSearchController()
     }
+    
+    func updateSearchResults(for searchController: UISearchController) {
+        
+    }
+    
+    func configureSearchController() {
+        // Initialize and perform a minimum configuration to the search controller.
+        let searchController = UISearchController(searchResultsController: nil)
+        searchController.searchResultsUpdater = self
+        searchController.dimsBackgroundDuringPresentation = false
+        searchController.searchBar.placeholder = "Search here..."
+        searchController.searchBar.delegate = self as? UISearchBarDelegate
+        searchController.searchBar.sizeToFit()
+        
+        // Place the search bar view to the tableview headerview.
+        // tblSearchResults.tableHeaderView = searchController.searchBar
+        documentsTableView.tableHeaderView = searchController.searchBar
+    }
+    
     
     override func viewWillAppear(_ animated: Bool) {
         documents = Documents.get()
