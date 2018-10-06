@@ -14,6 +14,7 @@ class DocumentListViewController: UIViewController, UITableViewDelegate, UITable
     @IBOutlet weak var documentsTableView: UITableView!
     
     var documents = [Document]()
+    var filteredDoc = [Document]()
     let dateFormatter = DateFormatter()
 
     override func viewDidLoad() {
@@ -31,23 +32,39 @@ class DocumentListViewController: UIViewController, UITableViewDelegate, UITable
     }
     
     func updateSearchResults(for searchController: UISearchController) {
-        
+        filterContentForSearchText(searchController.searchBar.text!)
     }
+    
+    let searchController = UISearchController(searchResultsController: nil)
     
     func configureSearchController() {
         // Initialize and perform a minimum configuration to the search controller.
-        let searchController = UISearchController(searchResultsController: nil)
+
         searchController.searchResultsUpdater = self
         searchController.dimsBackgroundDuringPresentation = false
         searchController.searchBar.placeholder = "Search here..."
         searchController.searchBar.delegate = self as? UISearchBarDelegate
         searchController.searchBar.sizeToFit()
-        
-        // Place the search bar view to the tableview headerview.
-        // tblSearchResults.tableHeaderView = searchController.searchBar
+        definesPresentationContext = true
         documentsTableView.tableHeaderView = searchController.searchBar
     }
     
+    func searchBarIsEmpty() -> Bool {
+        // Returns true if the text is empty or nil
+        return searchController.searchBar.text?.isEmpty ?? true
+    }
+    
+    func isFiltering() -> Bool {
+        return searchController.isActive && !searchBarIsEmpty()
+    }
+    
+    func filterContentForSearchText(_ searchText: String, scope: String = "All") {
+        filteredDoc = documents.filter({( doc : Document) -> Bool in
+            return doc.name.lowercased().contains(searchText.lowercased())
+        })
+        
+        documentsTableView.reloadData()
+    }
     
     override func viewWillAppear(_ animated: Bool) {
         documents = Documents.get()
@@ -64,19 +81,34 @@ class DocumentListViewController: UIViewController, UITableViewDelegate, UITable
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        if isFiltering() {
+            return filteredDoc.count
+        }
+        
         return documents.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "documentCell", for: indexPath)
         
-        if let cell = cell as? DocumentTableViewCell {
-            let document = documents[indexPath.row]
-            cell.nameLabel.text = document.name
-            cell.sizeLabel.text = String(document.size) + " bytes"
-            cell.modificationDateLabel.text = dateFormatter.string(from: document.modificationDate)
-        }
         
+        if isFiltering(){
+            if let cell = cell as? DocumentTableViewCell {
+                let document = filteredDoc[indexPath.row]
+                cell.nameLabel.text = document.name
+                cell.sizeLabel.text = String(document.size) + " bytes"
+                cell.modificationDateLabel.text = dateFormatter.string(from: document.modificationDate)
+                
+            }
+        }else{
+        
+            if let cell = cell as? DocumentTableViewCell {
+                let document = documents[indexPath.row]
+                cell.nameLabel.text = document.name
+                cell.sizeLabel.text = String(document.size) + " bytes"
+                cell.modificationDateLabel.text = dateFormatter.string(from: document.modificationDate)
+            }
+        }
         return cell
     }
     
